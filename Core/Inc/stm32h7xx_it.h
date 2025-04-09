@@ -22,7 +22,7 @@
 #define __STM32H7xx_IT_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Private includes ----------------------------------------------------------*/
@@ -51,14 +51,14 @@ void HardFault_Handler(void);
 void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
-void SVC_Handler(void);
 void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
+void TIM2_IRQHandler(void);
 void SPI1_IRQHandler(void);
+void OTG_HS_IRQHandler(void);
+void UART8_IRQHandler(void);
 void LTDC_IRQHandler(void);
 void LTDC_ER_IRQHandler(void);
-void OCTOSPI1_IRQHandler(void);
+void DMA2D_IRQHandler(void);
 void OCTOSPI2_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

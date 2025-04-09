@@ -80,6 +80,8 @@ extern uint8_t IS25LX_EnableMemoryMappedMode();
 extern uint8_t IS25LX_EnableMemoryMappedModeSDR();
 extern uint8_t IS25LX_GetStatus();
 extern uint8_t IS25LX_ReadMemory_1S_1S_1S(uint32_t ReadAddr, uint32_t Size);
+extern void Flash_MAXTRAN_Cfg();
+extern void EnblFlash_MemMapped();
 
 #ifdef __cplusplus
 }

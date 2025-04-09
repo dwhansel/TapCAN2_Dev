@@ -18,9 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
+#include "dma2d.h"
 #include "ltdc.h"
 #include "memorymap.h"
 #include "tim.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -28,6 +31,14 @@
 #include "lcd_init.h"
 #include "IS25LX128.h"
 #include "S27KL0642.h"
+#include "lvgl.h"
+#include "display.h"
+#include "octospi.h"
+#include "usbd_cdc_if.h"
+#include "string.h"
+#include "usart.h"
+#include "ram_test.h"
+
 
 /* USER CODE END Includes */
 
@@ -38,17 +49,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-/* Size of the HyperRAM */
-#define OSPI_HYPERRAM_SIZE          23
-#define OSPI_HYPERRAM_INCR_SIZE     256
 
-/* End address of the OSPI memory */
-#define OSPI_HYPERRAM_END_ADDR      (1 << OSPI_HYPERRAM_SIZE)
-
-/* Size of buffers */
-#define BUFFERSIZE                  (COUNTOF(aTxBuffer) - 1)
-/* Exported macro ------------------------------------------------------------*/
-#define COUNTOF(__BUFFER__)         (sizeof(__BUFFER__) / sizeof(*(__BUFFER__)))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,16 +61,25 @@
 
 /* USER CODE BEGIN PV */
 /* Buffer used for transmission */
-uint8_t aTxBuffer[] = " ****Memory-mapped OSPI communication****   ****Memory-mapped OSPI communication****   ****Memory-mapped OSPI communication****   ****Memory-mapped OSPI communication****   ****Memory-mapped OSPI communication****  ****Memory-mapped OSPI communication**** ";
-uint8_t GPIO_Test;
+
+
+char test_str[50];
+uint8_t bTx_test_str;
+/*uint8_t TestPassed[]="RAM Test Passed\n";
+uint8_t TestFailed[]="RAM Test Failed\n";
+uint8_t TestStarted[]="RAM Test Started\n";
+ uint8_t test_value = 0x55;*/
+  
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-
+void ram_test(uint8_t);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -85,13 +95,18 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  uint32_t address = 0;
-  uint16_t index;
-  __IO uint8_t *mem_addr;
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
-  MPU_Config();
+ // MPU_Config();
+
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+ // SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+ // SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -109,39 +124,67 @@ int main(void)
   PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  ExtFLASH_Init();
-  ExtRAM_Init();  
+  MX_OCTOSPI2_Init();
   
+ // ExtFLASH_Init();  
+ // ExtRAM_Init(); 
+ // MAXTRAN_Config();
+ // EnableMemMapped();
+  //DelayBlockCalibration();
+
   
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_LTDC_Init();
-  MX_TIM12_Init();
+  //MX_GPIO_Init();
+  //MX_LTDC_Init();
+  //MX_TIM12_Init();
+  //MX_UART8_Init();
+  //MX_DMA2D_Init();
   /* USER CODE BEGIN 2 */
-  LCD_SPI_Init();  
-  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
-   //mem_addr = (__IO uint8_t *)(OCTOSPI2_BASE + address);
-
-    //for (index = 0; index < BUFFERSIZE;index++)
-    //{
-      /* Writing Sequence --------------------------------------------------- */
-      //*mem_addr = aTxBuffer[index];
-      //*mem_addr = 0x0;
-
-      /* Reading Sequence --------------------------------------------------- */
-      //if (*mem_addr != 0 /*aTxBuffer[index]*/)
-      //{
-       //Error_Handler();
-      //}
-
-      //mem_addr++;
-   // }
+  //MX_USB_DEVICE_Init();
+  //MX_UART8_Init();
+  //LCD_SPI_Init();  
+  //HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+   /* initialize LVGL framework */
+  //lv_init();
+ 
+  for(;;) //int i=0;i<10000;i++)
+  {    
+    //memTest();
+    HyperramTest();
+    //ST_Hyperam_Test();
+    /*if(test_value==0x55)
+    {
+      test_value=0xAA;      
+    }
+    else
+    {
+      test_value=0x55;
+    }
+    ram_test(test_value);*/
+    HAL_Delay(100);
+  }
+  /* initialize display and touchscreen */
+  //lvgl_display_init();
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  //osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  //MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  //osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  /* Intensive Access ----------------------------------------------- */
+ 
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -246,7 +289,51 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void CPU_CACHE_Enable()
+{
+  /* Enable I-Cache */
+  SCB_EnableICache();
 
+  /* Enable D-Cache */
+  SCB_EnableDCache();
+}
+
+#define RAM_START_ADDRESS 0x70000000 // Example starting address for RAM
+#define RAM_SIZE 0x800000 // Example RAM size in bytes
+
+void ram_test(uint8_t test_value) 
+{
+    unsigned char *ram_ptr = (unsigned char *)RAM_START_ADDRESS;
+   // unsigned char test_value = 0x55; // Example test value
+
+    //HAL_UART_Transmit(&huart8, TestStarted, strlen(TestStarted), 1000);
+    //CDC_Transmit_HS(TestStarted, strlen(TestStarted));
+
+    // Write test value to each memory location
+    for (uint32_t i = 0; i < RAM_SIZE; i++) {
+        *ram_ptr = test_value;
+        ram_ptr++;
+    }
+
+    // Reset pointer and read back
+    ram_ptr = (unsigned char *)RAM_START_ADDRESS;
+    //test_value = 0xAA; // Change test value for verification
+
+    // Verify the written values
+    for (int i = 0; i < RAM_SIZE; i++) {
+        if (*ram_ptr != 0x55) { // Check if the value is the original test value
+     //       HAL_UART_Transmit(&huart8, TestFailed, strlen(TestFailed), 1000);
+            //CDC_Transmit_HS(TestFailed, strlen(TestFailed));
+            //printf("RAM test failed at address: 0x%04X\n", (unsigned int)RAM_START_ADDRESS + i);
+            return; // Exit on error
+        }
+        ram_ptr++;
+    }
+
+    //printf("RAM test passed!\n");
+   // HAL_UART_Transmit(&huart8, TestPassed, strlen(TestPassed), 1000);
+    //CDC_Transmit_HS(TestPassed, strlen(TestPassed));
+}
 /* USER CODE END 4 */
 
  /* MPU Configuration */
@@ -277,27 +364,43 @@ void MPU_Config(void)
   /** Initializes and configures the Region and the memory to be protected
   */
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = 0x70000000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_8MB;
-  MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-  MPU_InitStruct.BaseAddress = 0x90000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_16MB;
+  MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
 }
 
 /**

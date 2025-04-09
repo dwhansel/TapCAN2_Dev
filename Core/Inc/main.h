@@ -35,7 +35,8 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+extern char test_str[];
+extern uint8_t bTx_test_str;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -65,8 +66,6 @@ void Error_Handler(void);
 #define HWID0_GPIO_Port GPIOF
 #define HWID1_Pin GPIO_PIN_15
 #define HWID1_GPIO_Port GPIOF
-#define WIFI_BOOT_Pin GPIO_PIN_8
-#define WIFI_BOOT_GPIO_Port GPIOE
 #define GPI2_3V_Pin GPIO_PIN_8
 #define GPI2_3V_GPIO_Port GPIOD
 #define GPO3_3V_Pin GPIO_PIN_9

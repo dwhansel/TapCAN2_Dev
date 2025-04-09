@@ -7,6 +7,9 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
 		    "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+            "environment": {
+                "CPM_SOURCE_CACHE" : "${sourceDir}/Libs"
+            },
             "cacheVariables": {
             }
         },

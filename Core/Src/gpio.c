@@ -55,7 +55,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, WIFI_ENABLE_Pin|WIFI_BOOT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(WIFI_ENABLE_GPIO_Port, WIFI_ENABLE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPO3_3V_Pin|GPO4_3V_Pin|GPO5_3V_Pin|CAN1_TERM_EN_Pin
@@ -67,12 +67,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BEEPBEEP_GPIO_Port, BEEPBEEP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : WIFI_ENABLE_Pin WIFI_BOOT_Pin */
-  GPIO_InitStruct.Pin = WIFI_ENABLE_Pin|WIFI_BOOT_Pin;
+  /*Configure GPIO pin : WIFI_ENABLE_Pin */
+  GPIO_InitStruct.Pin = WIFI_ENABLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(WIFI_ENABLE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : TOUCH_INT_Pin */
   GPIO_InitStruct.Pin = TOUCH_INT_Pin;

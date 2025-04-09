@@ -444,6 +444,12 @@ uint8_t OCTOSPI1_Init()
   return IS25LX_OK;
 }
 
+void Flash_MAXTRAN_Cfg()
+{
+    //200 is 4us at 50 MHz
+    MODIFY_REG(hospi1.Instance->DCR3, OCTOSPI_DCR3_MAXTRAN, 0x000000CB); 
+}
+
 uint8_t ResetMemory(OSPI_HandleTypeDef *hospi)
 {
   OSPI_RegularCmdTypeDef sCommand = {0};
@@ -653,12 +659,17 @@ uint8_t ExtFLASH_Init()
    
 
     /* Step 4: Enable the memory mapped mode */
-    if (IS25LX_EnableMemoryMappedMode(&hospi1) != IS25LX_OK)
-    {
-      return IS25LX_ERROR;
-    }
+   // if (IS25LX_EnableMemoryMappedMode(&hospi1) != IS25LX_OK)
+   // {
+   //   return IS25LX_ERROR;
+   // }
     
   return IS25LX_OK;
+}
+
+void EnblFlash_MemMapped()
+{
+  IS25LX_EnableMemoryMappedMode(&hospi1);
 }
 
 uint8_t IS25LX_ReadMemory_1S_1S_1S(uint32_t ReadAddr, uint32_t Size)

@@ -9,6 +9,8 @@
 #include "stm32h7xx_hal.h"
 
 extern void ExtRAM_Init();
+extern void RAM_MAXTRAN_Cfg();
+extern void EnblRAM_MemMapped();
 
 #ifdef __cplusplus
 }

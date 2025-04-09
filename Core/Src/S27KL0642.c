@@ -1,8 +1,13 @@
 #include "S27KL0642.h"
 #include "octospi.h"
 
+/* relevant ST community posts */
+/* https://community.st.com/t5/stm32-mcus-products/help-needed-for-tuning-64mb-hyperram-s27kl0642dpbhi020-on/td-p/647501 */
+
 static void OCTOSPI2_Init();
 static void DelayBlock_Calibration();
+
+
 
 void ExtRAM_Init()
 {
@@ -20,13 +25,13 @@ static void OCTOSPI2_Init(void)
   /* USER CODE BEGIN OCTOSPI2_Init 0 */
 
   /* USER CODE END OCTOSPI2_Init 0 */
-
+   // LL_DLYB_CfgTypeDef dlyb_cfg,dlyb_cfg_test;
   OSPIM_CfgTypeDef sOspiManagerCfg = {0};
   OSPI_HyperbusCfgTypeDef sHyperBusCfg = {0};
 
   /* USER CODE BEGIN OCTOSPI2_Init 1 */
-  OSPI_HyperbusCmdTypeDef sCommand;
-   OSPI_MemoryMappedTypeDef sMemMappedCfg;
+ 
+  
   /* USER CODE END OCTOSPI2_Init 1 */
   /* OCTOSPI2 parameter configuration*/
   hospi2.Instance = OCTOSPI2;
@@ -37,11 +42,11 @@ static void OCTOSPI2_Init(void)
   hospi2.Init.ChipSelectHighTime = 2;
   hospi2.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
   hospi2.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
-  hospi2.Init.WrapSize = HAL_OSPI_WRAP_32_BYTES;
-  hospi2.Init.ClockPrescaler = 2;
+  hospi2.Init.WrapSize = HAL_OSPI_WRAP_NOT_SUPPORTED;
+  hospi2.Init.ClockPrescaler = 2; //100 MHz
   hospi2.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
   hospi2.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_ENABLE;
-  hospi2.Init.ChipSelectBoundary = 23;
+  hospi2.Init.ChipSelectBoundary = 0;
   hospi2.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
   hospi2.Init.MaxTran = 0;
   hospi2.Init.Refresh = 400; //4us @100 Mhz
@@ -70,13 +75,26 @@ static void OCTOSPI2_Init(void)
   /* USER CODE BEGIN OCTOSPI2_Init 2 */
     /* DELAY block */
 	/* disable the output clock and enable the access to the phase selection SEL[3:0] */
-	DLYB_OCTOSPI2->CR 	= DLYB_CR_SEN;
+	//DLYB_OCTOSPI2->CR 	= DLYB_CR_SEN;
 	/* set delay */
-	DLYB_OCTOSPI2->CFGR = (0 & DLYB_CFGR_SEL_Msk);
+	//DLYB_OCTOSPI2->CFGR = (0 & DLYB_CFGR_SEL_Msk);
 	/* disable the access to the phase selection, enable output */
-	DLYB_OCTOSPI2->CR 	= DLYB_CR_DEN;
+	//DLYB_OCTOSPI2->CR 	= DLYB_CR_DEN;
+  //  if (HAL_OSPI_DLYB_GetClockPeriod(&hospi2,&dlyb_cfg) != HAL_OK)
+  //{
+   // BSP_LED_On(LED_RED);
+  //}
+  
 
-  /* Memory-mapped mode configuration --------------------------------------- */
+  //DelayBlock_Calibration();
+  /* USER CODE END OCTOSPI2_Init 2 */
+}
+
+void EnblRAM_MemMapped()
+{
+  OSPI_MemoryMappedTypeDef sMemMappedCfg={0};
+  OSPI_HyperbusCmdTypeDef sCommand={0};
+    /* Memory-mapped mode configuration --------------------------------------- */
   sCommand.AddressSpace = HAL_OSPI_MEMORY_ADDRESS_SPACE;
   sCommand.AddressSize  = HAL_OSPI_ADDRESS_32_BITS;
   sCommand.DQSMode      = HAL_OSPI_DQS_ENABLE;
@@ -95,8 +113,12 @@ static void OCTOSPI2_Init(void)
     Error_Handler();
   }
 
-  //DelayBlock_Calibration();
-  /* USER CODE END OCTOSPI2_Init 2 */
+}
+
+void RAM_MAXTRAN_Cfg()
+{
+    //200 is 4us at 50 MHz
+    //MODIFY_REG(hospi2.Instance->DCR3, OCTOSPI_DCR3_MAXTRAN, 0x000000CB); 
 }
 
 #define DLYB_BUFFERSIZE (COUNTOF(Cal_buffer) - 1)

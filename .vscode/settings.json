@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "lvgl.h": "c",
+        "display.h": "c",
+        "ui.h": "c",
+        "octospi.h": "c",
+        "main.h": "c"
+    }
+}
